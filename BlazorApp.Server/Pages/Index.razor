@@ -1,0 +1,36 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+
+
+<PageTitle>Index</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<SurveyPrompt Title="How is Blazor working for you?" />
+
+
+
+<label>Sala: </label>
+<input typeof="nummber" @bind="salaId" placeholder="Informe a sala" />
+<br />
+<label>Usuário: </label><input type="number" @bind="@userId" placeholder="Informe o Id do Usuário" />
+
+
+<button @onclick=@(_ => GetUsuario(salaId, userId)) class="btn btn-primary">Enviar</button>
+
+
+@code{
+    int userId = 0;
+    int salaId = 0;
+
+    public void GetUsuario(int _salaId, int _userId)
+    {
+        userId = _userId;
+        salaId = _salaId;
+        NavigationManager.NavigateTo($"/seat/{salaId}/{userId}");
+    }
+
+    
+}

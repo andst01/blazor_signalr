@@ -1,0 +1,175 @@
+﻿@page "/seat/{salaId}/{userId}"
+
+@using Blazor.Extensions
+@using Blazor.Extensions.Canvas
+@using Blazor.Extensions.Canvas.Canvas2D
+@using Microsoft.AspNetCore.SignalR.Client
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Linq
+
+
+
+@inject BECanvasComponent CanvasReference
+@inject NavigationManager Navigation
+@inject IJSRuntime jsRuntime
+
+<div tabindex="0" @ref="divCanvas" @onclick="OnCanvasClick">
+    <BECanvas Width="1000" Height="800" @ref="CanvasReference"></BECanvas>
+</div>
+
+<script src="_content/Blazor.Extensions.Canvas/blazor.extensions.canvas.js"></script>
+<script>
+    function getDivCanvasOffSets(el) {
+        var obj = {};
+        obj.offsetLeft = el.offsetLeft;
+        obj.offsetTop = el.offsetTop;
+
+        return JSON.stringify(obj);
+    }
+</script>
+
+@code {
+
+    [Parameter]
+    public string UserId { get; set; }
+
+    [Parameter]
+    public string SalaId { get; set; }
+
+
+    private Microsoft.AspNetCore.SignalR.Client.HubConnection _hubConnection;
+    private Dictionary<int, string> _selectedSeats =  new();
+
+    ElementReference divCanvas;
+    private Canvas2DContext? _context;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        _hubConnection = new Microsoft.AspNetCore.SignalR.Client.HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/seathub").ToString())
+            .Build();
+
+        _hubConnection.On<int, string>("SeatSelected", async (seatId, userId) =>
+        {
+            _selectedSeats[seatId] = userId;
+            await DrawSeatAsync();
+        });
+
+        _hubConnection.On<int>("SeatDeselected", async seatId =>
+        {
+            _selectedSeats.Remove(seatId);
+            await DrawSeatAsync();
+
+        });
+
+        _hubConnection.On<int>("SeatAlreadySelected", async seatId =>
+        {
+            Console.WriteLine($"Seat {seatId} already selected.");
+        });
+
+        await _hubConnection.StartAsync();
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _context = await CanvasReference.CreateCanvas2DAsync();
+
+            await DrawSeatAsync();
+        }
+
+    }
+
+    private async Task DrawSeatAsync()
+    {
+        if (_context == null) return;
+
+        int seatWidt = 30;
+        int seatHeight = 30;
+        int gap = 10;
+        int offsetX = 10;
+        int offsetY = 10;
+
+        double mouseX = 0;
+        double mouseY = 0;
+
+        if(divCanvas.Id?.Length > 0)
+        {
+            string data = await jsRuntime.InvokeAsync<string>("getDivCanvasOffSets", new object[] { divCanvas });
+
+            JObject offsets = (JObject)JsonConvert.DeserializeObject(data);
+            mouseX = offsets.Value<double>("offsetLeft");
+            mouseY = offsets.Value<double>("offsetTop");
+
+        }
+
+       // await _context.ClearRectAsync(0, 0, 1000, 800);
+
+        for (int i = 0; i < 20; i++)
+        {
+            int x = offsetX + i * (seatWidt + gap);
+            int y = offsetY;
+
+            var teste3 = _selectedSeats;
+
+            string color = _selectedSeats.ContainsKey(i)
+                                ? (_selectedSeats[i] == UserId ? "green" : "red")
+                                : "blue";
+
+            //Desenhar retangulo do assento
+            await _context.SetFillStyleAsync(color);
+            await _context.FillRectAsync(x, y, seatWidt, seatHeight);
+
+            //Desenhar o numero do assento
+            await _context.SetFillStyleAsync("white");
+            await _context.SetFontAsync("13px Arial");
+            await _context.FillTextAsync((i + 1).ToString(), x + seatWidt / 4, y + seatHeight / 1.5);
+        }
+
+    }
+
+    private async Task OnCanvasClick(MouseEventArgs e)
+    {
+        if (_context == null) return;
+
+        int seatWidt = 30;
+        int seatHeight = 30;
+        int gap = 10;
+        int offsetX = 10;
+        int offsetY = 10;
+        double mouseX = 0;
+        double mouseY = 0;
+
+        var teste = e;
+
+        if (divCanvas.Id?.Length > 0)
+        {
+            string data = await jsRuntime.InvokeAsync<string>("getDivCanvasOffSets", new object[] { divCanvas });
+
+            JObject offsets = (JObject)JsonConvert.DeserializeObject(data);
+            mouseX = offsets.Value<double>("offsetLeft");
+            mouseY = offsets.Value<double>("offsetTop");
+
+            var teste2 = e.ClientX - mouseX;
+
+        }
+
+        int seatId = (int)((e.ClientX - mouseX) / (seatWidt + gap));
+
+        if(seatId >= 0 && seatId < 20)
+        {
+            if(_selectedSeats.ContainsKey(seatId) && _selectedSeats[seatId] == UserId)
+            {
+                await _hubConnection.SendAsync("DeselectSeat", seatId, UserId);
+            }
+            else
+            {
+                await _hubConnection.SendAsync("SelectSeat", seatId, UserId);
+            }
+        }
+
+    }
+}
