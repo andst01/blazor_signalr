@@ -7,40 +7,55 @@ namespace BlazorApp.Server.SignalRHub
 {
     public class SeatHub : Hub
     {
-        private static readonly Dictionary<int, string> SeatSelections = new();
+        private static readonly Dictionary<string, Dictionary<int, string>> SeatSelections = new();
+
+        private static string groupName = string.Empty;
 
 
         public Task JoinGroup(string group)
         {
             Groups.AddToGroupAsync(Context.ConnectionId, group);
 
-            var objSeats = JsonConvert.SerializeObject(SeatSelections);
+            groupName = group;
+
+            if (!SeatSelections.ContainsKey(group))
+            {
+                SeatSelections.Add(group, new Dictionary<int, string>());
+            }
+
+
+            var listSeats = SeatSelections[group];
+
+            var objSeats = JsonConvert.SerializeObject(listSeats);
 
             return Clients.Group(group).SendAsync("SelectGroupSeats", objSeats);
         }
 
         public async Task SelectSeat(string group, int seatId, string userId)
         {
-            if (SeatSelections.ContainsKey(seatId))
+
+            
+            if (SeatSelections[group].ContainsKey(seatId))
             {
                 await Clients.Group(group).SendAsync("SeatAlreadySelected", seatId);
                 return;
             }
 
+           
 
-            SeatSelections[seatId] = userId;
+            SeatSelections[group][seatId] = userId;
 
             await Clients.Group(group).SendAsync("SeatSelected", seatId, userId);
 
 
         }
 
-        public async Task DeselectSeat(int seatId, string userId)
+        public async Task DeselectSeat(string group,int seatId, string userId)
         {
-            if (SeatSelections.TryGetValue(seatId, out var currentUserId) && currentUserId == userId)
+            if (SeatSelections[group].TryGetValue(seatId, out var currentUserId) && currentUserId == userId)
             {
-                SeatSelections.Remove(seatId);
-                await Clients.All.SendAsync("SeatDeselected", seatId);
+                SeatSelections[group].Remove(seatId);
+                await Clients.Group(group).SendAsync("SeatDeselected", seatId);
             }
         }
 
@@ -50,9 +65,11 @@ namespace BlazorApp.Server.SignalRHub
         }
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
+
+           // Groups.RemoveFromGroupAsync
             var disconnectedSeats = new List<int>();
 
-            foreach (var (seatId, userId) in SeatSelections)
+            foreach (var (seatId, userId) in SeatSelections[groupName])
             {
                 if (userId == Context.ConnectionId)
                 {
@@ -62,7 +79,7 @@ namespace BlazorApp.Server.SignalRHub
 
             foreach (var seatId in disconnectedSeats)
             {
-                SeatSelections.Remove(seatId);
+                SeatSelections[groupName].Remove(seatId);
                 await Clients.All.SendAsync("SeatDeselected", seatId);
             }
 
