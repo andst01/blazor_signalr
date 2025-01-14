@@ -27,6 +27,7 @@ namespace BlazorApp.Server.SignalRHub
                 return;
             }
 
+
             SeatSelections[seatId] = userId;
 
             await Clients.Group(group).SendAsync("SeatSelected", seatId, userId);
