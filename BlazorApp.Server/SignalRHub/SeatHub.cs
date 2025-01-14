@@ -32,6 +32,7 @@ namespace BlazorApp.Server.SignalRHub
 
             await Clients.Group(group).SendAsync("SeatSelected", seatId, userId);
 
+
         }
 
         public async Task DeselectSeat(int seatId, string userId)
