@@ -47,10 +47,12 @@
     {
 
         _hubConnection = new Microsoft.AspNetCore.SignalR.Client.HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri("/seathub").ToString())
+            .WithUrl(Navigation.ToAbsoluteUri("/seathub").ToString(), Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets |
+             Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling)
+            .WithAutomaticReconnect()
             .Build();
-       
-       
+
+
 
 
 
@@ -81,6 +83,8 @@
 
         await _hubConnection.SendAsync("JoinGroup", SalaId);
 
+        await base.OnInitializedAsync();
+
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -93,7 +97,7 @@
         }
 
         await base.OnAfterRenderAsync(firstRender);
-        
+
     }
 
     private async Task DrawSeatAsync()
@@ -111,15 +115,14 @@
 
         if(divCanvas.Id?.Length > 0)
         {
-            string data = await jsRuntime.InvokeAsync<string>("getDivCanvasOffSets", new object[] { divCanvas });
+            string data = await jsRuntime.InvokeAsync<string>("getDivCanvasOffSets", 
+                                    new object[] { divCanvas });
 
             JObject offsets = (JObject)JsonConvert.DeserializeObject(data);
             mouseX = offsets.Value<double>("offsetLeft");
             mouseY = offsets.Value<double>("offsetTop");
 
         }
-
-        // await _context.ClearRectAsync(0, 0, 1000, 800);
 
         for (int i = 0; i < 20; i++)
         {
@@ -132,8 +135,6 @@
                                 ? (_selectedSeats[i] == UserId ? "green" : "red")
                                 : "blue";
 
-            
-            //_hubConnection.SendAsync("JoinGroup", , JsonConvert.SerializeObject(_selectedSeats);
 
             //Desenhar retangulo do assento
             await _context.SetFillStyleAsync(color);
@@ -145,7 +146,7 @@
             await _context.FillTextAsync((i + 1).ToString(), x + seatWidt / 4, y + seatHeight / 1.5);
         }
 
-       
+
 
     }
 
@@ -175,9 +176,10 @@
 
         }
 
+       
         int seatId = (int)((e.ClientX - mouseX) / (seatWidt + gap));
 
-        if(seatId >= 0 && seatId < 20)
+        if(seatId >= 0 && seatId < 20 && e.ClientY < 100)
         {
             if (_selectedSeats.ContainsKey(seatId) && _selectedSeats[seatId] != UserId)
             {
@@ -186,7 +188,7 @@
 
             else if(_selectedSeats.ContainsKey(seatId) && _selectedSeats[seatId] == UserId)
             {
-                await _hubConnection.SendAsync("DeselectSeat", seatId, UserId);
+                await _hubConnection.SendAsync("DeselectSeat", SalaId, seatId, UserId);
             }
             else
             {
