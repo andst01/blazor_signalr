@@ -116,3 +116,7 @@ D:\Projeto\Estudo\BlazorGit\blazor_signalr\BlazorApp.Server\bin\Debug\net6.0\Mic
 D:\Projeto\Estudo\BlazorGit\blazor_signalr\BlazorApp.Server\bin\Debug\net6.0\Microsoft.Extensions.Logging.dll
 D:\Projeto\Estudo\BlazorGit\blazor_signalr\BlazorApp.Server\bin\Debug\net6.0\Microsoft.Extensions.Options.dll
 D:\Projeto\Estudo\BlazorGit\blazor_signalr\BlazorApp.Server\bin\Debug\net6.0\Microsoft.Extensions.Primitives.dll
+C:\Projetos\Estudo\Blazor\blazor_signalr\BlazorApp.Server\bin\Debug\net6.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\Projetos\Estudo\Blazor\blazor_signalr\BlazorApp.Server\bin\Debug\net6.0\Microsoft.Extensions.Logging.dll
+C:\Projetos\Estudo\Blazor\blazor_signalr\BlazorApp.Server\bin\Debug\net6.0\Microsoft.Extensions.Options.dll
+C:\Projetos\Estudo\Blazor\blazor_signalr\BlazorApp.Server\bin\Debug\net6.0\Microsoft.Extensions.Primitives.dll
