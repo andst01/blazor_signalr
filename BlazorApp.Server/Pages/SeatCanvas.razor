@@ -49,7 +49,16 @@
         _hubConnection = new Microsoft.AspNetCore.SignalR.Client.HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/seathub").ToString())
             .Build();
+       
+       
 
+
+
+        _hubConnection.On<string>("SelectGroupSeats", async (seats) =>
+        {
+            var objSeats = JsonConvert.DeserializeObject<Dictionary<int, string>>(seats);
+            _selectedSeats = objSeats;
+        });
         _hubConnection.On<int, string>("SeatSelected", async (seatId, userId) =>
         {
             _selectedSeats[seatId] = userId;
@@ -70,6 +79,8 @@
 
         await _hubConnection.StartAsync();
 
+        await _hubConnection.SendAsync("JoinGroup", SalaId);
+
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -81,6 +92,8 @@
             await DrawSeatAsync();
         }
 
+        await base.OnAfterRenderAsync(firstRender);
+        
     }
 
     private async Task DrawSeatAsync()
@@ -106,7 +119,7 @@
 
         }
 
-       // await _context.ClearRectAsync(0, 0, 1000, 800);
+        // await _context.ClearRectAsync(0, 0, 1000, 800);
 
         for (int i = 0; i < 20; i++)
         {
@@ -119,6 +132,9 @@
                                 ? (_selectedSeats[i] == UserId ? "green" : "red")
                                 : "blue";
 
+            
+            //_hubConnection.SendAsync("JoinGroup", , JsonConvert.SerializeObject(_selectedSeats);
+
             //Desenhar retangulo do assento
             await _context.SetFillStyleAsync(color);
             await _context.FillRectAsync(x, y, seatWidt, seatHeight);
@@ -128,6 +144,8 @@
             await _context.SetFontAsync("13px Arial");
             await _context.FillTextAsync((i + 1).ToString(), x + seatWidt / 4, y + seatHeight / 1.5);
         }
+
+       
 
     }
 
@@ -161,13 +179,18 @@
 
         if(seatId >= 0 && seatId < 20)
         {
-            if(_selectedSeats.ContainsKey(seatId) && _selectedSeats[seatId] == UserId)
+            if (_selectedSeats.ContainsKey(seatId) && _selectedSeats[seatId] != UserId)
+            {
+                await jsRuntime.InvokeVoidAsync("alert", "Assento já selecionado!");
+            }
+
+            else if(_selectedSeats.ContainsKey(seatId) && _selectedSeats[seatId] == UserId)
             {
                 await _hubConnection.SendAsync("DeselectSeat", seatId, UserId);
             }
             else
             {
-                await _hubConnection.SendAsync("SelectSeat", seatId, UserId);
+                await _hubConnection.SendAsync("SelectSeat", SalaId, seatId, UserId);
             }
         }
 

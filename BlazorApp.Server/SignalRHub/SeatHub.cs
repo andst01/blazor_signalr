@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -8,17 +9,27 @@ namespace BlazorApp.Server.SignalRHub
     {
         private static readonly Dictionary<int, string> SeatSelections = new();
 
-        public async Task SelectSeat(int seatId, string userId)
+
+        public Task JoinGroup(string group)
+        {
+            Groups.AddToGroupAsync(Context.ConnectionId, group);
+
+            var objSeats = JsonConvert.SerializeObject(SeatSelections);
+
+            return Clients.Group(group).SendAsync("SelectGroupSeats", objSeats);
+        }
+
+        public async Task SelectSeat(string group, int seatId, string userId)
         {
             if (SeatSelections.ContainsKey(seatId))
             {
-                await Clients.Caller.SendAsync("SeatAlreadySelected", seatId);
+                await Clients.Group(group).SendAsync("SeatAlreadySelected", seatId);
                 return;
             }
 
             SeatSelections[seatId] = userId;
 
-            await Clients.All.SendAsync("SeatSelected", seatId, userId);
+            await Clients.Group(group).SendAsync("SeatSelected", seatId, userId);
 
         }
 
@@ -41,19 +52,19 @@ namespace BlazorApp.Server.SignalRHub
 
             foreach (var (seatId, userId) in SeatSelections)
             {
-                if(userId == Context.ConnectionId) 
+                if (userId == Context.ConnectionId)
                 {
                     disconnectedSeats.Add(seatId);
                 }
             }
 
-            foreach(var seatId in disconnectedSeats)
+            foreach (var seatId in disconnectedSeats)
             {
                 SeatSelections.Remove(seatId);
                 await Clients.All.SendAsync("SeatDeselected", seatId);
             }
 
-           
+
         }
     }
 }
