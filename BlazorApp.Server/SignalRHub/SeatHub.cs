@@ -63,6 +63,19 @@ namespace BlazorApp.Server.SignalRHub
         {
             return base.OnConnectedAsync();
         }
+
+        public async Task DeselectAll(string group, string userId)
+        {
+           
+            var itemSeats = SeatSelections[group].Where(x => x.Value == userId).ToList();
+
+            foreach (var item in itemSeats)
+            {
+                SeatSelections[group].Remove(item.Key);
+                await Clients.All.SendAsync("SeatDeselected", item.Key);
+            }
+
+        }
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
 
