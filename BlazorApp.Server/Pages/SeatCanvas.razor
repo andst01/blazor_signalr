@@ -12,6 +12,7 @@
 @inject BECanvasComponent CanvasReference
 @inject NavigationManager Navigation
 @inject IJSRuntime jsRuntime
+@implements IAsyncDisposable 
 
 <div tabindex="0" @ref="divCanvas" @onclick="OnCanvasClick">
     <BECanvas Width="1000" Height="800" @ref="CanvasReference"></BECanvas>
@@ -135,7 +136,6 @@
                                 ? (_selectedSeats[i] == UserId ? "green" : "red")
                                 : "blue";
 
-
             //Desenhar retangulo do assento
             await _context.SetFillStyleAsync(color);
             await _context.FillRectAsync(x, y, seatWidt, seatHeight);
@@ -176,8 +176,8 @@
 
         }
 
-       
         int seatId = (int)((e.ClientX - mouseX) / (seatWidt + gap));
+
 
         if(seatId >= 0 && seatId < 20 && e.ClientY < 120)
         {
@@ -196,5 +196,14 @@
             }
         }
 
+    }
+
+    public  async ValueTask DisposeAsync()
+    {
+        if(_hubConnection is not null)
+        {
+            //await _hubConnection.StopAsync();
+            await _hubConnection.SendAsync("DeselectAll", SalaId, UserId);
+        }
     }
 }
