@@ -72,7 +72,7 @@ namespace BlazorApp.Server.SignalRHub
             foreach (var item in itemSeats)
             {
                 SeatSelections[group].Remove(item.Key);
-                await Clients.All.SendAsync("SeatDeselected", item.Key);
+                await Clients.Group(group).SendAsync("SeatDeselected", item.Key);
             }
 
         }

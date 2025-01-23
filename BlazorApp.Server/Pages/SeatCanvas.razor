@@ -61,6 +61,8 @@
         {
             var objSeats = JsonConvert.DeserializeObject<Dictionary<int, string>>(seats);
             _selectedSeats = objSeats;
+            if (_selectedSeats.Count > 0)
+                await DrawSeatAsync();
         });
         _hubConnection.On<int, string>("SeatSelected", async (seatId, userId) =>
         {

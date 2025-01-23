@@ -4,8 +4,8 @@
 
 .vs/
 
-bin/
-obj/
-BlazorApp.Server/bin/
-BlazorApp.Server/obj/
+/bin/
+/obj/
+/BlazorApp.Server/bin/*
+/BlazorApp.Server/obj/*
 
