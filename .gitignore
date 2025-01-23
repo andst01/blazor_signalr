@@ -3,7 +3,6 @@
 ################################################################################
 
 .vs/
-.gitignore
 
 /BlazorApp.Server/bin/
 /BlazorApp.Server/obj/
