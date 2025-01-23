@@ -4,6 +4,6 @@
 
 .vs/
 
-/BlazorApp.Server/bin/
-/BlazorApp.Server/obj/
+BlazorApp.Server/bin/
+BlazorApp.Server/obj/
 
